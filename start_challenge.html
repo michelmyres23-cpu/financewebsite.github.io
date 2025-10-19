@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Start Challenge — Finance Tutor</title>
+  <meta name="description" content="One-question-at-a-time finance challenge with explanations. Saves results to localStorage (financelearn_v1)." />
+  <style>
+    :root{ --bg:#071026; --card:#0b1220; --accent:#60a5fa; --muted:#94a3b8; color:#e6eef8; }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#071022 0%, #081226 60%);color:var(--muted);padding:28px;}
+    .wrap{max-width:900px;margin:0 auto}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px;padding:22px;color:#e6eef8;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    h1{margin:0;font-size:22px;color:#e6eef8} .small{font-size:13px;color:var(--muted)}
+    .question{margin-top:18px;padding:16px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)}
+    .choices{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+    .choice{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);cursor:pointer;background:transparent;text-align:left}
+    .choice.correct{border-color:rgba(96,165,250,0.7);background:rgba(96,165,250,0.06);color:#dff1ff}
+    .choice.wrong{border-color:rgba(248,113,113,0.5);background:rgba(248,113,113,0.04);color:#ffdede}
+    .meta{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+    .btn{padding:10px 12px;border-radius:10px;border:0;background:var(--accent);color:#042028;cursor:pointer;font-weight:700}
+    .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 10px;border-radius:8px;cursor:pointer}
+    .explain{margin-top:12px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);font-size:14px}
+    .progress{height:10px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden;margin-top:12px}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,#60a5fa,#7dd3fc);width:0%}
+    .summary{margin-top:18px}
+    .tag{font-size:12px;padding:6px;border-radius:6px;background:rgba(255,255,255,0.02);color:var(--muted)}
+    @media (max-width:680px){ body{padding:16px} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" id="app">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h1>Start Challenge</h1>
+          <div class="small">One question at a time — detailed explanation after each answer.</div>
+        </div>
+        <div><span class="tag" id="sessionTag">Practice</span></div>
+      </div>
+
+      <div class="progress" aria-hidden="true"><i id="progBar" style="width:0%"></i></div>
+
+      <div id="content">
+        <!-- dynamic content here -->
+      </div>
+
+      <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+        <button class="ghost" id="saveBtn">Save progress</button>
+        <button class="ghost" id="loadBtn">Load saved</button>
+        <button class="ghost" id="homeSyncBtn">Sync to Home</button>
+        <button class="btn" id="startBtn">Start Challenge</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Questions bank (sample set). Each question has: id, q, choices [A-D], answer (index), explanation, tags
+const QUESTION_BANK = [
+  {id:1, q: "Which of the following best describes a 'want' in personal finance?", choices: ["Rent for your apartment","Daily groceries for essentials","A subscription to a streaming service","Prescription medication"], answer:2, explanation:"Wants are discretionary — things you can cut without harming essentials. A streaming subscription is discretionary compared to rent or medicine.", tags:["budget","needs-wants"]},
+  {id:2, q: "If you save ₹500 every month, how much will you have after 1 year (12 months) without interest?", choices:["₹5,000","₹6,000","₹6,500","₹7,000"], answer:1, explanation:"₹500 × 12 = ₹6,000.", tags:["saving","arithmetic"]},
+  {id:3, q: "Simple interest on ₹10,000 at 5% per annum for 2 years is:", choices:["₹500","₹1,000","₹1,050","₹2,000"], answer:1, explanation:"Simple interest = P × r × t = 10000 × 0.05 × 2 = ₹1,000.", tags:["interest","math"]},
+  {id:4, q: "Which of these reduces your debt burden fastest?", choices:["Pay only the minimum due","Pay extra towards the principal","Transfer balance to another card with similar rate","Wait until due date to pay"], answer:1, explanation:"Paying extra principal reduces the outstanding balance and interest charged going forward.", tags:["debt","loans"]},
+  {id:5, q: "Compound interest differs from simple interest because:", choices:["It is always lower","It applies only to loans","It earns interest on prior interest","It uses a different currency"], answer:2, explanation:"Compound interest charges/earns interest on previously accumulated interest as well as principal.", tags:["interest"]},
+  {id:6, q: "What is an emergency fund typically used for?", choices:["Buying a new phone","Paying for unexpected medical bills","Everyday groceries","Investment in stocks"], answer:1, explanation:"Emergency funds cover unexpected costs like medical emergencies, job loss, or urgent repairs.", tags:["saving","planning"]},
+  {id:7, q: "If your monthly income is ₹50,000 and you spend ₹35,000, your savings rate is:", choices:["30%","20%","70%","50%"], answer:0, explanation:"Savings = 50,000 − 35,000 = 15,000 → 15,000/50,000 = 0.30 = 30%.", tags:["budget"]},
+  {id:8, q: "Which is a long-term investment option generally considered diversified?", choices:["Keeping cash at home","A diversified mutual fund","High-interest savings account","Short-term personal loan"], answer:1, explanation:"A diversified mutual fund spreads risk across multiple securities, suitable for long-term investing.", tags:["investing"]},
+  {id:9, q: "Inflation means:", choices:["Prices fall over time","General price levels rise over time","Currency becomes more valuable","Taxes decrease automatically"], answer:1, explanation:"Inflation is the rise in general price levels over time, reducing purchasing power.", tags:["economics"]},
+  {id:10, q: "Which action improves your credit score (generally)?", choices:["Missing payments often","Keeping high credit utilization","Paying bills on time","Closing all credit accounts"], answer:2, explanation:"Timely payments are a major factor in good credit scores.", tags:["credit"]},
+  {id:11, q: "An example of a fixed expense is:", choices:["Electricity bill (varies)","Groceries (varies)","Monthly rent","Dining out"], answer:2, explanation:"Fixed expenses are regular and predictable, like monthly rent.", tags:["budget"]},
+  {id:12, q: "Dollar-cost averaging refers to:", choices:["Investing a lump sum at once","Investing a fixed amount regularly","Only buying when market peaks","Selling shares monthly"], answer:1, explanation:"Dollar-cost averaging is investing a fixed amount periodically, reducing timing risk.", tags:["investing","strategy"]},
+  {id:13, q: "Which of these increases your net worth?", choices:["Taking a new loan without buying assets","Saving and investing a portion of income","Spending all income on wants","Defaulting on a loan"], answer:1, explanation:"Saving and investing builds assets which increase net worth.", tags:["networth"]},
+  {id:14, q: "A budget surplus means:", choices:["Expenses exceed income","Income equals expenses","Income exceeds expenses","No income recorded"], answer:2, explanation:"A surplus is when income is greater than expenses.", tags:["budget"]},
+  {id:15, q: "When comparing loans, APR is useful because it:", choices:["Only shows monthly fee","Includes interest and many fees to reflect annual cost","Is irrelevant","Shows future stock returns"], answer:1, explanation:"APR (Annual Percentage Rate) expresses the annual cost including interest and certain fees, making comparison easier.", tags:["loans","costs"]},
+  {id:16, q: "A sinking fund is best described as:", choices:["A loan with decreasing balance","Saving regularly for a specific upcoming expense","An emergency fund synonym","Buying expensive items on credit"], answer:1, explanation:"A sinking fund is saving in advance for a known future expense (e.g., a vacation or appliance).", tags:["saving"]},
+  {id:17, q: "Which account usually provides highest liquidity?", choices:["Fixed deposit with 1-year lock-in","Savings account","Real estate investment","Long-term bond"], answer:1, explanation:"Savings accounts typically allow immediate withdrawals and have high liquidity.", tags:["savings","liquidity"]},
+  {id:18, q: "If you want to prioritize building wealth, which habit helps most over long run?", choices:["Consistent saving & investing","Buying luxury goods early","Borrowing to invest without plan","Relying on single income only"], answer:0, explanation:"Consistent saving and investing leverages compounding over time.", tags:["wealth","habit"]},
+  {id:19, q: "Which is tax-efficient for long-term capital gains in many countries?", choices:["Holding investments for short-term","Frequent trading","Holding investments for long-term","Withdrawing annually"], answer:2, explanation:"Many tax systems favor lower rates on long-term capital gains to encourage long-term investing.", tags:["taxes","investing"]},
+  {id:20, q: "Why review subscriptions regularly?", choices:["They never change","To ensure you're not paying for unused services","To increase spending","Subscriptions improve credit score"], answer:1, explanation:"Regular review helps cut unnecessary recurring costs and improve cashflow.", tags:["budget","cost-cutting"]}
+];
+
+// App state
+let state = {
+  questions: [], // chosen question objects (shuffled)
+  currentIndex: 0,
+  answers: [], // objects {qid, chosen, correct}
+  started: false,
+  config: {perRun: 10}
+};
+
+// DOM refs
+const content = document.getElementById('content')
+const progBar = document.getElementById('progBar')
+const startBtn = document.getElementById('startBtn')
+const saveBtn = document.getElementById('saveBtn')
+const loadBtn = document.getElementById('loadBtn')
+const homeSyncBtn = document.getElementById('homeSyncBtn')
+const sessionTag = document.getElementById('sessionTag')
+
+function pickQuestions(n){
+  const pool = QUESTION_BANK.slice()
+  // shuffle and pick n unique
+  for(let i=pool.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]] }
+  return pool.slice(0,n)
+}
+
+function startChallenge(){
+  state.questions = pickQuestions(state.config.perRun)
+  state.currentIndex = 0
+  state.answers = []
+  state.started = true
+  renderQuestion()
+  updateProgress()
+  startBtn.textContent = 'Restart Challenge'
+}
+
+function renderQuestion(){
+  const qObj = state.questions[state.currentIndex]
+  content.innerHTML = `
+    <div class="question">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div style="max-width:72%"><strong>Q${state.currentIndex+1}.</strong> ${qObj.q}</div>
+        <div class="small muted">Tag: ${qObj.tags.join(', ')}</div>
+      </div>
+      <div class="choices" id="choices">
+        ${qObj.choices.map((c, i)=>`<button class="choice" data-i="${i}">${String.fromCharCode(65+i)}. ${c}</button>`).join('')}
+      </div>
+      <div class="meta">
+        <div class="small">Question ${state.currentIndex+1} of ${state.questions.length}</div>
+        <div><button class="ghost" id="skipBtn">Skip</button></div>
+      </div>
+      <div id="explainArea"></div>
+    </div>
+  `
+  // attach handlers
+  Array.from(document.querySelectorAll('.choice')).forEach(b=> b.addEventListener('click', handleAnswer))
+  document.getElementById('skipBtn').addEventListener('click', ()=>{
+    // record as skipped (null choice)
+    state.answers.push({qid:qObj.id, chosen:null, correct:false, skipped:true})
+    nextOrFinish()
+  })
+}
+
+function handleAnswer(e){
+  const chosen = Number(e.currentTarget.dataset.i)
+  const qObj = state.questions[state.currentIndex]
+  const correct = (chosen === qObj.answer)
+  // mark choice visuals
+  Array.from(document.querySelectorAll('.choice')).forEach((btn)=>{
+    const idx = Number(btn.dataset.i)
+    btn.disabled = true
+    if(idx === qObj.answer) btn.classList.add('correct')
+    if(idx === chosen && idx !== qObj.answer) btn.classList.add('wrong')
+  })
+  // show explanation always
+  const explainArea = document.getElementById('explainArea')
+  explainArea.innerHTML = `<div class="explain"><strong>${correct ? 'Correct!' : 'Not quite.'}</strong> ${qObj.explanation}</div>
+    <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+      <button class="ghost" id="nextBtn">${state.currentIndex+1 === state.questions.length ? 'Finish' : 'Next'}</button>
+    </div>`
+  document.getElementById('nextBtn').addEventListener('click', ()=>{
+    state.answers.push({qid:qObj.id, chosen, correct, skipped:false})
+    nextOrFinish()
+  })
+}
+
+function nextOrFinish(){
+  if(state.currentIndex+1 < state.questions.length){
+    state.currentIndex++
+    renderQuestion()
+    updateProgress()
+  } else {
+    finishChallenge()
+  }
+}
+
+function updateProgress(){
+  const pct = Math.round(((state.currentIndex) / state.questions.length) * 100)
+  progBar.style.width = pct + '%'
+}
+
+function finishChallenge(){
+  state.started = false
+  const correctCount = state.answers.filter(a=>a.correct).length
+  const attempted = state.answers.filter(a=>a.chosen!==null).length
+  const total = state.questions.length
+  const percent = Math.round((correctCount/total)*100)
+  const remark = percent >= 80 ? 'Excellent — strong understanding!' : percent >=50 ? 'Good — some review recommended.' : 'Keep practicing — review lessons and try again.'
+
+  content.innerHTML = `
+    <div class="summary">
+      <h2>Results</h2>
+      <div class="small">Score: <strong>${correctCount} / ${total}</strong> (${percent}%)</div>
+      <div class="small" style="margin-top:8px"><strong>${remark}</strong></div>
+      <div style="margin-top:12px">
+        <button class="btn" id="reviewBtn">Review Answers</button>
+        <button class="ghost" id="retakeBtn">Retake</button>
+        <button class="ghost" id="saveResultBtn">Save Result to Home</button>
+      </div>
+
+      <div style="margin-top:14px">
+        <details>
+          <summary class="small">Detailed breakdown</summary>
+          <div id="breakdown" style="margin-top:8px"></div>
+        </details>
+      </div>
+    </div>
+  `
+
+  // breakdown list
+  const breakdown = document.getElementById('breakdown')
+  breakdown.innerHTML = state.questions.map((q, i)=>{
+    const ans = state.answers[i] || {}
+    const chosenText = (ans.chosen === null || ans.chosen===undefined) ? '<em>Skipped</em>' : String.fromCharCode(65+ans.chosen)+'. '+q.choices[ans.chosen]
+    const correctText = String.fromCharCode(65+q.answer)+'. '+q.choices[q.answer]
+    return `<div style="padding:8px;border-bottom:1px dashed rgba(255,255,255,0.03)"><strong>Q${i+1}.</strong> ${q.q}<div style="margin-top:6px">Your answer: ${chosenText}</div><div>Correct: ${correctText}</div><div style="margin-top:6px" class="explain">${q.explanation}</div></div>`
+  }).join('')
+
+  document.getElementById('reviewBtn').addEventListener('click', ()=> reviewMode())
+  document.getElementById('retakeBtn').addEventListener('click', ()=>{
+    startChallenge()
+  })
+  document.getElementById('saveResultBtn').addEventListener('click', ()=> saveResultToHome())
+
+  // save a local run summary to localStorage under 'challenge_history'
+  saveLocalRun({date: new Date().toISOString(), score: `${correctCount}/${total}`, percent, detail: state.answers})
+  progBar.style.width = '100%'
+}
+
+// Review mode: show questions with answers and explanations, allow jumping
+function reviewMode(){
+  content.innerHTML = `<div><h2>Review Mode</h2><div id="revList"></div><div style="margin-top:12px;display:flex;justify-content:flex-end"><button class="btn" id="doneRev">Done</button></div></div>`
+  const revList = document.getElementById('revList')
+  revList.innerHTML = state.questions.map((q,i)=>{
+    const ans = state.answers[i] || {}
+    const chosenText = (ans.chosen === null || ans.chosen===undefined) ? '<em>Skipped</em>' : String.fromCharCode(65+ans.chosen)+'. '+q.choices[ans.chosen]
+    const correctText = String.fromCharCode(65+q.answer)+'. '+q.choices[q.answer]
+    const css = ans.correct ? 'style="border-left:3px solid rgba(96,165,250,0.6);padding-left:8px"' : 'style="border-left:3px solid rgba(248,113,113,0.6);padding-left:8px"'
+    return `<div ${css} style="margin-bottom:10px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.01)"><strong>Q${i+1}.</strong> ${q.q}<div style="margin-top:6px">Your: ${chosenText}</div><div>Correct: ${correctText}</div><div class="explain" style="margin-top:6px">${q.explanation}</div></div>`
+  }).join('')
+  document.getElementById('doneRev').addEventListener('click', ()=> finishChallenge())
+}
+
+// Local persistence helpers
+function saveLocalRun(run){
+  const key = 'finance_challenge_history'
+  try{
+    const raw = localStorage.getItem(key)
+    const arr = raw ? JSON.parse(raw) : []
+    arr.unshift(run)
+    localStorage.setItem(key, JSON.stringify(arr.slice(0,50))) // keep last 50
+  }catch(e){ console.error('saveLocalRun', e) }
+}
+
+document.getElementById('startBtn').addEventListener('click', ()=> startChallenge())
+saveBtn.addEventListener('click', ()=>{
+  try{
+    localStorage.setItem('challenge_state', JSON.stringify(state))
+    alert('Progress saved locally for this browser.')
+  }catch(e){ alert('Could not save: '+e.message) }
+})
+loadBtn.addEventListener('click', ()=>{
+  try{
+    const raw = localStorage.getItem('challenge_state')
+    if(!raw){ alert('No saved progress found.'); return }
+    state = JSON.parse(raw)
+    alert('Loaded saved progress. Continue by clicking Start Challenge.')
+  }catch(e){ alert('Could not load: '+e.message) }
+})
+
+// Save results into homepage storage under financelearn_v1 so homepage can show recent score
+function saveResultToHome(){
+  try{
+    const rawHome = localStorage.getItem('financelearn_v1')
+    const home = rawHome ? JSON.parse(rawHome) : {tx:[], income:0, points:0, challenges:[]}
+    // compute latest score summary
+    const correctCount = state.answers.filter(a=>a.correct).length
+    const total = state.questions.length
+    const percent = Math.round((correctCount/total)*100)
+    const result = {date: new Date().toISOString(), score: `${correctCount}/${total}`, percent}
+    home.challenges = home.challenges || []
+    home.challenges.unshift(result)
+    home.challenges = home.challenges.slice(0,20)
+    localStorage.setItem('financelearn_v1', JSON.stringify(home))
+    alert('Saved result to homepage storage. Switch to homepage and refresh to see it.')
+  }catch(e){ alert('Could not save to home: '+e.message) }
+}
+
+homeSyncBtn.addEventListener('click', ()=> saveResultToHome())
+
+// initialize display (start screen)
+function init(){
+  content.innerHTML = `
+    <div style="margin-top:18px">
+      <div class="small">This challenge pulls a mix of questions from budgeting, saving, interest, credit and investing. Each run contains <strong>${state.config.perRun}</strong> randomly selected questions.</div>
+      <div style="margin-top:12px">
+        <label class="small">Number of questions:</label>
+        <select id="numQ" class="ghost" style="margin-top:6px;padding:8px;border-radius:8px">
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="15">15</option>
+        </select>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn" id="beginNow">Begin Now</button>
+        <button class="ghost" id="viewHistory">View Past Attempts</button>
+      </div>
+      <div id="historyArea" style="margin-top:12px"></div>
+    </div>
+  `
+  document.getElementById('beginNow').addEventListener('click', ()=>{
+    const n = Number(document.getElementById('numQ').value) || 10
+    state.config.perRun = n
+    startChallenge()
+  })
+  document.getElementById('viewHistory').addEventListener('click', ()=> showHistory())
+  loadHistoryPreview()
+}
+
+function loadHistoryPreview(){
+  try{
+    const raw = localStorage.getItem('challenge_history') || localStorage.getItem('finance_challenge_history')
+    const arr = raw ? JSON.parse(raw) : []
+    const area = document.getElementById('historyArea')
+    if(!area) return
+    if(arr.length===0){ area.innerHTML = '<div class="small muted">No previous runs saved locally yet.</div>'; return }
+    area.innerHTML = arr.slice(0,5).map(h=>`<div style="padding:8px;border-radius:8px;background:rgba(255,255,255,0.01);margin-bottom:6px"><div class="small">${new Date(h.date).toLocaleString()}</div><div><strong>${h.score}</strong> • ${h.percent}%</div></div>`).join('')
+  }catch(e){ console.error(e) }
+}
+
+function showHistory(){
+  const raw = localStorage.getItem('finance_challenge_history') || localStorage.getItem('challenge_history') || '[]'
+  let arr = []
+  try{ arr = JSON.parse(raw) } catch(e){ arr = [] }
+  content.innerHTML = `<div><h2>Past Attempts</h2><div id="histList"></div><div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end"><button class="ghost" id="histBack">Back</button><button class="ghost" id="clearHist">Clear History</button></div></div>`
+  const histList = document.getElementById('histList')
+  if(arr.length===0) histList.innerHTML = '<div class="small muted">No history found.</div>'
+  else histList.innerHTML = arr.map(h=>`<div style="padding:8px;border-radius:8px;background:rgba(255,255,255,0.01);margin-bottom:8px"><div class="small">${new Date(h.date).toLocaleString()}</div><div><strong>${h.score}</strong> • ${h.percent}%</div></div>`).join('')
+  document.getElementById('histBack').addEventListener('click', ()=> init())
+  document.getElementById('clearHist').addEventListener('click', ()=>{
+    if(confirm('Clear local challenge history?')){ localStorage.removeItem('finance_challenge_history'); init(); }
+  })
+}
+
+init()
+</script>
+</body>
+</html>

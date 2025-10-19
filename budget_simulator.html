@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Budgeting Simulator — Expense Evaluator</title>
+  <meta name="description" content="Standalone expense evaluator that works with FinanceLearn's Interactive Budgeting Simulator (syncs via localStorage)." />
+  <style>
+    :root{ --bg:#071026; --card:#0b1220; --accent:#60a5fa; --muted:#94a3b8; color:#e6eef8; --glass: rgba(255,255,255,0.03); }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#071022 0%, #081226 60%);color:var(--muted);padding:20px;}
+    .wrap{max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px;padding:16px;color:#e6eef8;border:1px solid rgba(255,255,255,0.03)}
+    h1{margin:0;font-size:20px;color:#e6eef8} .small{font-size:13px;color:var(--muted)}
+    .field{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+    input, select{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:10px;border-radius:8px;color:inherit}
+    button{padding:10px 12px;border-radius:10px;border:0;background:var(--accent);color:#042028;cursor:pointer;font-weight:600}
+    button.ghost{background:transparent;border:1px solid rgba(96,165,250,0.12);color:var(--accent)}
+    ul{padding-left:12px;margin:8px 0}
+    li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,0.02);align-items:center}
+    .tag{font-size:12px;padding:6px;border-radius:6px;background:rgba(255,255,255,0.02);color:var(--muted)}
+    .result{margin-top:12px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.01);}
+    .tips{margin-top:10px;font-size:13px}
+    .muted{color:var(--muted)}
+    .center{display:flex;gap:8px;align-items:center}
+    @media (max-width:980px){ .wrap{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <main class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h1>Budgeting Simulator — Expense Evaluator</h1>
+          <div class="small">Syncs with FinanceLearn (localStorage key <code>financelearn_v1</code>) — or run standalone.</div>
+        </div>
+        <div class="muted small">Standalone tool</div>
+      </div>
+
+      <div style="margin-top:12px" class="field">
+        <label class="small">Monthly income</label>
+        <input id="income" type="number" placeholder="e.g. 1500" />
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px" class="field">
+          <label class="small">Expense name</label>
+          <input id="eName" type="text" placeholder="e.g. Snacks" />
+        </div>
+        <div style="width:130px" class="field">
+          <label class="small">Amount</label>
+          <input id="eAmt" type="number" placeholder="e.g. 30" />
+        </div>
+        <div style="width:140px" class="field">
+          <label class="small">Type</label>
+          <select id="eType"><option value="need">Need (essential)</option><option value="want">Want (discretionary)</option></select>
+        </div>
+        <div style="align-self:end"><button id="addBtn">Add</button></div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="small">Expenses</div>
+          <div class="small muted">Total: <strong id="totalExp">0</strong></div>
+        </div>
+        <ul id="list"></ul>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+          <div class="small">Remaining: <strong id="remaining">0</strong></div>
+          <div style="display:flex;gap:8px">
+            <button class="ghost" id="syncBtn">Sync with Home</button>
+            <button class="ghost" id="loadBtn">Load from Home</button>
+            <button class="ghost" id="clearBtn">Clear</button>
+            <button class="ghost" id="exportBtn">Export CSV</button>
+          </div>
+        </div>
+
+        <div class="result" id="resultArea">
+          <div><strong>Evaluation</strong></div>
+          <div id="evalText" class="small muted" style="margin-top:8px">Add income and expenses, then click <em>Evaluate</em>.</div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="ghost" id="evaluate">Evaluate</button>
+            <button class="ghost" id="autoCategorize">Auto-categorize (simple)</button>
+            <button class="ghost" id="suggestCuts">Suggest cuts</button>
+          </div>
+          <div class="tips" id="tips"></div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="small muted">Quick facts</div>
+        <div class="small muted">v1.0</div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="small"><strong>Needs vs Wants</strong></div>
+        <div class="small muted">Mark essentials as <em>Need</em>. The evaluator rewards keeping wants low.</div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="small"><strong>Scoring</strong></div>
+        <ul class="small muted">
+          <li>Save ≥20% of income → +15 pts</li>
+          <li>Cover all expenses → +7 pts</li>
+          <li>Deficit → Learn & reduce wants</li>
+        </ul>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="small"><strong>Sync</strong></div>
+        <div class="small muted">This tool reads/writes the same localStorage key used by the homepage so progress and transactions can be shared between windows.</div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button id="pushToHome" class="ghost">Push to Home</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="small muted">
+        Tip: Open both pages side-by-side and use "Load from Home" or "Sync with Home" to keep data in sync.
+      </div>
+    </aside>
+  </div>
+
+<script>
+// Key used by homepage
+const STORAGE_KEY = 'financelearn_v1'
+
+// local working state
+let state = { income:0, tx: [] }
+
+// DOM refs
+const incomeEl = document.getElementById('income')
+const listEl = document.getElementById('list')
+const totalExpEl = document.getElementById('totalExp')
+const remainingEl = document.getElementById('remaining')
+const evalText = document.getElementById('evalText')
+const tipsEl = document.getElementById('tips')
+
+function saveLocal(){
+  // Save the simulator-only state locally in this page (not overwriting homepage unless user pushes)
+  localStorage.setItem('budget_sim_local', JSON.stringify(state))
+}
+
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem('budget_sim_local')
+    if(raw){ state = JSON.parse(raw); render(); return true }
+  }catch(e){ console.error(e) }
+  return false
+}
+
+function pushToHome(){
+  // read homepage storage, merge tx and income, then write back
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY)
+    const home = raw ? JSON.parse(raw) : { tx:[], income:0, points:0 }
+    // overwrite income and tx on home with our data (simple merge)
+    home.income = state.income
+    home.tx = state.tx.map(t=>({name:t.name, amount:t.amount}))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(home))
+    alert('Pushed data to homepage localStorage. Switch to homepage and refresh to see changes.')
+  }catch(e){ alert('Could not push to home: '+e.message) }
+}
+
+function loadFromHome(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if(!raw){ alert('No data found in homepage storage'); return }
+    const home = JSON.parse(raw)
+    state.income = Number(home.income) || 0
+    // homepage tx may be objects with amount; try to preserve type tags if present
+    state.tx = (home.tx || []).map(t=>({ name: t.name || 'Expense', amount: Number(t.amount||0), type: t.type || 'want' }))
+    render()
+  }catch(e){ alert('Failed to load from home: '+e.message) }
+}
+
+function render(){
+  incomeEl.value = state.income || ''
+  listEl.innerHTML = ''
+  let total = 0, needs=0, wants=0
+  state.tx.forEach((t, i)=>{
+    total += Number(t.amount || 0)
+    if(t.type === 'need') needs += Number(t.amount || 0); else wants += Number(t.amount || 0)
+    const li = document.createElement('li')
+    li.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><strong>${t.name}</strong> <span class="tag">${t.type}</span></div><div style="display:flex;gap:8px;align-items:center"><span>₹${t.amount}</span><button class="ghost" data-i="${i}">Edit</button></div>`
+    listEl.appendChild(li)
+  })
+  totalExpEl.textContent = '₹' + total
+  remainingEl.textContent = '₹' + ((Number(state.income)||0) - total)
+  saveLocal()
+  // attach edit handlers
+  Array.from(listEl.querySelectorAll('button.ghost')).forEach(b=> b.addEventListener('click', handleEdit))
+}
+
+function handleEdit(e){
+  const i = Number(e.currentTarget.dataset.i)
+  const t = state.tx[i]
+  const newName = prompt('Edit name', t.name) || t.name
+  const newAmt = Number(prompt('Edit amount', t.amount) || t.amount)
+  const newType = prompt('Type (need/want)', t.type) || t.type
+  state.tx[i] = { name: newName, amount: newAmt, type: (newType==='need'?'need':'want') }
+  render()
+}
+
+document.getElementById('addBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('eName').value.trim()
+  const amt = Number(document.getElementById('eAmt').value) || 0
+  const type = document.getElementById('eType').value
+  if(!name || amt<=0){ alert('Enter valid name and amount'); return }
+  state.tx.push({ name, amount: amt, type })
+  document.getElementById('eName').value=''; document.getElementById('eAmt').value=''
+  render()
+})
+
+document.getElementById('evaluate').addEventListener('click', ()=>{
+  const income = Number(state.income) || Number(incomeEl.value) || 0
+  const total = state.tx.reduce((s,t)=>s+Number(t.amount||0),0)
+  if(income<=0){ evalText.textContent = 'Enter your monthly income first.'; return }
+  const remaining = income - total
+  const savedPercent = Math.round((Math.max(0,remaining)/income)*100)
+  let message = ''
+  if(remaining >= income*0.2){
+    message = `Great — you are saving ${savedPercent}% (₹${remaining}) of your income. Balanced budget! (+15 pts equivalent)`
+  } else if(remaining >= 0){
+    message = `You covered expenses. You are saving ${savedPercent}% (₹${remaining}). Try to increase to 20% for stronger security. (+7 pts equivalent)`
+  } else {
+    message = `Budget deficit of ₹${Math.abs(remaining)}. Needs attention — reduce wants or increase income.`
+  }
+  // breakdown needs vs wants
+  const needs = state.tx.filter(t=>t.type==='need').reduce((s,t)=>s+Number(t.amount||0),0)
+  const wants = state.tx.filter(t=>t.type!=='need').reduce((s,t)=>s+Number(t.amount||0),0)
+  const breakdown = `Needs: ₹${needs} • Wants: ₹${wants}`
+  evalText.textContent = message + ' — ' + breakdown
+  // suggestions
+  const suggestionList = []
+  if(wants > needs * 0.6) suggestionList.push('Wants are high relative to needs. Consider trimming discretionary expenses by 10–30%.')
+  if(remaining < 0) suggestionList.push('Cut non-essential wants and re-evaluate subscriptions and small daily expenses.')
+  if(remaining >= income*0.2) suggestionList.push('Good job — consider moving excess to an emergency fund or index fund.')
+  tipsEl.innerHTML = suggestionList.length ? suggestionList.map(s=>'<div>• '+s+'</div>').join('') : '<div>• No major suggestions — keep it up!</div>'
+})
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{ if(confirm('Clear all expenses?')){ state.tx=[]; render() } })
+
+document.getElementById('syncBtn').addEventListener('click', ()=>{
+  // Read homepage storage and merge our income into visible fields (does not overwrite homepage)
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if(!raw){ alert('No homepage data found'); return }
+  try{
+    const home = JSON.parse(raw)
+    // quick sync: prefer homepage income if present
+    if(home.income) state.income = Number(home.income)
+    // bring in homepage transactions (but don't override our types)
+    const incoming = (home.tx||[]).map(t=>({name:t.name, amount:Number(t.amount||0), type: t.type || 'want'}))
+    // merge (simple concatenation)
+    state.tx = state.tx.concat(incoming)
+    render(); alert('Synced from homepage into this tool (merged).')
+  }catch(e){ alert('Error reading homepage storage: '+e.message) }
+})
+
+document.getElementById('loadBtn').addEventListener('click', ()=> loadFromHome() )
+document.getElementById('pushToHome').addEventListener('click', ()=> pushToHome() )
+
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const rows = [['name','amount','type']].concat(state.tx.map(t=>[t.name, t.amount, t.type]))
+  const csv = rows.map(r=> r.map(c=>'\"'+String(c).replace(/\"/g,'\"\"')+'\"').join(',')).join('\\n')
+  const blob = new Blob([csv], {type:'text/csv'})
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = 'expenses.csv'; a.click(); URL.revokeObjectURL(url)
+})
+
+document.getElementById('autoCategorize').addEventListener('click', ()=>{
+  // Very simple auto-categorizer: common keywords -> need
+  const needKeywords = ['rent','mortgage','grocer','grocery','electric','water','internet','transport','fuel','medic','insurance','loan','tuition','school']
+  state.tx = state.tx.map(t=>{
+    const name = (t.name||'').toLowerCase()
+    const isNeed = needKeywords.some(k => name.includes(k))
+    return {...t, type: isNeed ? 'need' : (t.type||'want')}
+  })
+  render(); alert('Auto-categorized based on keywords. Review items and edit if necessary.')
+})
+
+// initialize from local saved or homepage if available
+if(!loadLocal()){
+  // try to load from homepage as a convenience
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if(raw){ try{ const home = JSON.parse(raw); state.income = Number(home.income)||0; state.tx = (home.tx||[]).map(t=>({name:t.name, amount:Number(t.amount||0), type: t.type||'want'})); }catch(e){} }
+}
+render()
+
+// keep income field synced to state on change
+incomeEl.addEventListener('change', ()=>{ state.income = Number(incomeEl.value)||0; saveLocal(); render() })
+</script>
+</body>
+</html>

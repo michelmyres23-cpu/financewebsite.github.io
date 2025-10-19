@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FinanceLearn — Home</title>
+  <meta name="description" content="Learn budgeting, saving and investing with fun gamified lessons and challenges." />
+  <style>
+    /* ----------  Reset & base ---------- */
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#60a5fa; --muted:#94a3b8; --glass: rgba(255,255,255,0.04);
+      --success:#34d399; --danger:#fb7185; --gold:#f59e0b;
+      font-synthesis: none;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial; background:linear-gradient(180deg,#071022 0%, #081226 60%); color:#e6eef8;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; padding:24px;
+    }
+    a{color:var(--accent)}
+
+    /* ---------- Layout ---------- */
+    .container{max-width:1100px;margin:0 auto;display:grid;grid-template-columns: 1fr 360px; gap:20px;align-items:start}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .logo{display:flex;gap:12px;align-items:center}
+    .logo .symbol{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#7dd3fc);display:flex;align-items:center;justify-content:center;color:#042028;font-weight:700}
+    h1{font-size:20px;margin:0}
+    .subtitle{color:var(--muted);font-size:13px}
+
+    /* ---------- Cards ---------- */
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.03)}
+
+    /* ---------- Left main ---------- */
+    .main{padding:12px}
+    .hero{display:flex;gap:16px;align-items:center}
+    .hero .lead{flex:1}
+    .hero h2{margin:0 0 6px 0;font-size:22px}
+    .hero p{margin:0;color:var(--muted)}
+    .cta-row{display:flex;gap:10px;margin-top:12px}
+    .btn{padding:10px 14px;border-radius:10px;border:0;background:var(--accent);color:#042028;font-weight:600;cursor:pointer}
+    .btn.secondary{background:transparent;color:var(--accent);border:1px solid rgba(96,165,250,0.18)}
+
+    /* ---------- Progress & Gamification ---------- */
+    .progress-wrap{margin-top:16px}
+    .progress{height:12px;background:var(--glass);border-radius:999px;overflow:hidden}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--accent));width:0}
+    .badges{display:flex;gap:8px;margin-top:12px}
+    .badge{padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);font-size:13px;color:var(--muted)}
+
+    /* ---------- Lessons & Activity ---------- */
+    .lessons{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}
+    .lesson{padding:12px;border-radius:10px;background:rgba(255,255,255,0.01);border:1px solid rgba(255,255,255,0.02)}
+    .lesson h3{margin:0 0 8px 0;font-size:16px}
+    .lesson p{margin:0;color:var(--muted);font-size:13px}
+
+    /* ---------- Right sidebar ---------- */
+    .sidebar .section{margin-bottom:12px}
+    .score{display:flex;align-items:center;gap:12px}
+    .score .points{font-size:22px;font-weight:700}
+    .mini-widget{display:flex;gap:10px;align-items:center}
+
+    /* ---------- Interactive forms ---------- */
+    .field{display:flex;flex-direction:column;gap:6px}
+    input[type=text], input[type=number], select{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:10px;border-radius:8px;color:inherit}
+    label{font-size:13px;color:var(--muted)}
+    .small{font-size:13px;color:var(--muted)}
+
+    /* ---------- Tables / lists ---------- */
+    .transactions{margin-top:8px}
+    .transactions li{display:flex;justify-content:space-between;padding:8px 6px;border-bottom:1px dashed rgba(255,255,255,0.02);font-size:14px}
+
+    /* ---------- Footer ---------- */
+    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+
+    /* Responsive */
+    @media (max-width:980px){
+      .container{grid-template-columns:1fr;}
+      .hero{flex-direction:column;align-items:flex-start}
+    }
+  </style>
+</head>
+<body>
+  <header class="container" style="grid-template-columns:1fr;">
+    <div class="logo">
+      <div class="symbol">FL</div>
+      <div>
+        <h1>FinanceLearn</h1>
+        <div class="subtitle">Gamified financial literacy for young learners</div>
+      </div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:10px;align-items:center;margin-top:8px">
+      <div class="small" id="welcomeText">Welcome — Guest</div>
+      <button class="btn secondary" id="resetBtn">Reset Progress</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <main class="main">
+      <section class="card hero">
+        <div class="lead">
+          <h2>Build better money habits — one fun challenge at a time</h2>
+          <p>Short lessons, micro-challenges, and simulated budgeting & investing to earn points and badges.</p>
+          <div class="cta-row">
+          <a href="start_challenge.html" class="btn">Start Quick Challenge</a>
+            <button class="btn secondary" id="openLessons">View Lessons</button>
+          </div>
+
+          <div class="progress-wrap">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div class="small">Learning progress</div>
+              <div class="small" id="progressPercent">0% • <span id="pointsLabel">0</span> pts</div>
+            </div>
+            <div class="progress" aria-hidden>
+              <i id="progressBar"></i>
+            </div>
+            <div class="badges" id="badgeList">
+              <!-- dynamic badges -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:14px">
+        <h3 style="margin:0">Interactive Budgeting Simulator</h3>
+        <p class="small">Add income and expenses to practise prioritising needs vs wants. Earn points for balanced budgets.</p>
+
+        <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <div class="field">
+              <label>Monthly income</label>
+              <input type="number" id="incomeInput" placeholder="e.g. 1500" />
+            </div>
+          </div>
+          <div style="min-width:220px">
+            <div class="field">
+              <label>Expense name</label>
+              <input type="text" id="expenseName" placeholder="e.g. Snacks" />
+            </div>
+          </div>
+          <div style="width:150px">
+            <div class="field">
+              <label>Amount</label>
+              <input type="number" id="expenseAmt" placeholder="e.g. 30" />
+            </div>
+          </div>
+          <div style="align-self:end">
+            <a href="budget_simulator.html" target="_blank" class="btn">Open Budgeting Simulator</a>
+
+          </div>
+        </div>
+
+        <ul class="transactions" id="txList"></ul>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+          <div class="small">Remaining: <strong id="remaining">0</strong></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn secondary" id="evaluateBudget">Evaluate</button>
+            <button class="btn secondary" id="clearTx">Clear</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:14px">
+        <h3 style="margin:0">Mini Quiz — Earn points</h3>
+        <p class="small">Answer quick multiple choice questions to gain points and unlock badges.</p>
+        <div id="quizArea" style="margin-top:12px">
+          <!-- dynamic quiz -->
+        </div>
+      </section>
+
+      <footer>
+        Made with ❤️ • Encourage small habits — save, plan, invest.
+      </footer>
+    </main>
+
+    <aside class="sidebar">
+      <div class="card section">
+        <div class="score">
+          <div class="mini-widget">
+            <div style="width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#7dd3fc);display:flex;align-items:center;justify-content:center;font-weight:700;color:#042028">P</div>
+          </div>
+          <div>
+            <div class="small">Points</div>
+            <div class="points" id="points">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card section">
+        <h4 style="margin:0">Savings Goal</h4>
+        <p class="small">Set a short-term savings target and track progress.</p>
+        <div style="margin-top:8px">
+          <div class="field">
+            <label>Goal amount</label>
+            <input type="number" id="goalAmount" placeholder="e.g. 500" />
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn" id="setGoal">Set Goal</button>
+            <button class="btn secondary" id="addToGoal">Add to Goal</button>
+          </div>
+          <div style="margin-top:8px" class="small">Saved: <strong id="goalSaved">0</strong></div>
+        </div>
+      </div>
+
+      <div class="card section">
+        <h4 style="margin:0">Quick Investment Simulator</h4>
+        <p class="small">Try a small investment and see projected returns.</p>
+        <div style="margin-top:8px" class="field">
+          <label>Amount to invest</label>
+          <input type="number" id="investAmt" placeholder="e.g. 100" />
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn" id="simulateInvest">Simulate</button>
+          <button class="btn secondary" id="randomInvest">Random Tip</button>
+        </div>
+        <div style="margin-top:8px" class="small">Projected: <strong id="projected">0</strong></div>
+      </div>
+
+    </aside>
+  </div>
+
+  <script>
+    /* ---------- Simple gamified logic with localStorage for persistence ---------- */
+    const STORAGE_KEY = 'financelearn_v1'
+    const defaultState = {
+      name: 'Guest', points: 0, progress:0, badges:[], tx:[], income:0, goal: {target:0,saved:0}
+    }
+
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY)
+        return raw ? JSON.parse(raw) : defaultState
+      }catch(e){console.error(e);return defaultState}
+    }
+    function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) }
+
+    let state = loadState()
+
+    // init UI values
+    document.getElementById('welcomeText').textContent = `Welcome — ${state.name}`
+    document.getElementById('points').textContent = state.points
+    document.getElementById('pointsLabel').textContent = state.points
+    document.getElementById('progressPercent').firstChild && (document.getElementById('progressPercent').firstChild.textContent = '')
+    updateProgressBar()
+    renderTx()
+    renderBadges()
+    document.getElementById('goalSaved').textContent = state.goal.saved
+
+    // ---------- Helper functions ----------
+    function addPoints(n){ state.points += n; state.progress = Math.min(100, state.progress + Math.round(n/2)); saveState(); updateUI(); }
+    function updateUI(){ document.getElementById('points').textContent = state.points; document.getElementById('pointsLabel').textContent = state.points; updateProgressBar(); renderBadges(); saveState() }
+    function updateProgressBar(){ const bar = document.getElementById('progressBar'); bar.style.width = (state.progress||0) + '%'; document.getElementById('progressPercent').textContent = `${state.progress || 0}% • ${state.points} pts` }
+    function grantBadge(id,label){ if(!state.badges.includes(id)){ state.badges.push(id); addPoints(10); showToast(`Badge unlocked: ${label}`); saveState(); renderBadges() }}
+    function renderBadges(){ const bd = document.getElementById('badgeList'); bd.innerHTML = ''; state.badges.forEach(b=>{ const el = document.createElement('div'); el.className='badge'; el.textContent = b; bd.appendChild(el) }) }
+
+    function showToast(msg){ const el = document.createElement('div'); el.textContent = msg; el.style.position='fixed'; el.style.right='22px'; el.style.bottom='22px'; el.style.background='rgba(2,6,23,0.95)'; el.style.padding='12px 16px'; el.style.borderRadius='10px'; el.style.boxShadow='0 6px 18px rgba(2,6,23,0.6)'; document.body.appendChild(el); setTimeout(()=>el.remove(),2500) }
+
+    // ---------- Budgeting simulator ----------
+    const txListEl = document.getElementById('txList')
+    function renderTx(){ txListEl.innerHTML = ''; state.tx.forEach((t,i)=>{
+      const li = document.createElement('li')
+      li.innerHTML = `<span>${t.name}</span><span>${t.amount}</span>`
+      txListEl.appendChild(li)
+    }) }
+
+ 
+    document.getElementById('incomeInput').addEventListener('change', (e)=>{ state.income = Number(e.target.value)||0; saveState(); computeRemaining() })
+    function computeRemaining(){ const total = state.tx.reduce((s,t)=>s+t.amount,0); const remaining = (state.income||0) - total; document.getElementById('remaining').textContent = remaining; return remaining }
+
+    document.getElementById('evaluateBudget').addEventListener('click', ()=>{
+      const rem = computeRemaining();
+      if(state.income<=0){ showToast('Please enter income first'); return }
+      if(rem>= (state.income*0.2)){
+        addPoints(15); grantBadge('Balanced Budget'); showToast('Nice! You saved 20% or more — +15 pts')
+      } else if(rem>=0){ addPoints(7); showToast('OK — you covered expenses. +7 pts') }
+      else{ addPoints(1); showToast('Budget deficit — try reducing wants. +1 pt for trying') }
+    })
+
+    document.getElementById('clearTx').addEventListener('click', ()=>{ state.tx=[]; saveState(); renderTx(); computeRemaining(); showToast('Cleared expenses') })
+
+    // ---------- Savings goal ----------
+    document.getElementById('setGoal').addEventListener('click', ()=>{
+      const v = Number(document.getElementById('goalAmount').value) || 0; if(v<=0){showToast('Enter a valid goal amount');return}
+      state.goal.target = v; saveState(); showToast('Goal set'); document.getElementById('goalSaved').textContent = state.goal.saved
+    })
+    document.getElementById('addToGoal').addEventListener('click', ()=>{
+      const v = Number(prompt('Add how much to your saved amount?')||0); if(v<=0){return}
+      state.goal.saved += v; saveState(); document.getElementById('goalSaved').textContent = state.goal.saved; addPoints(Math.min(10, Math.round(v/10))); if(state.goal.saved >= state.goal.target && state.goal.target>0){ grantBadge('Goal Achiever'); showToast('Goal reached — Congrats!') }
+    })
+
+    // ---------- Investment simulator ----------
+    document.getElementById('simulateInvest').addEventListener('click', ()=>{
+      const amt = Number(document.getElementById('investAmt').value)||0; if(amt<=0){showToast('Enter invest amount');return}
+      // Simple projection: random-ish conservative growth estimate
+      const rate = (Math.random()*8) + 3; // 3% to 11%
+      const projected = Math.round(amt * (1 + rate/100));
+      document.getElementById('projected').textContent = projected;
+      showToast(`Projected return (1 yr est): ${projected} (${rate.toFixed(1)}%)`)
+      addPoints(5)
+    })
+    document.getElementById('randomInvest').addEventListener('click', ()=>{
+      const tips = [
+        'Start small: even ₹100/month compounds over time.',
+        'Diversify: mix safe instruments and growth options.',
+        'Emergency fund first: 3-6 months of expenses.'
+      ]
+      showToast(tips[Math.floor(Math.random()*tips.length)])
+    })
+
+    // ---------- Mini quiz ----------
+    const quizData = [
+      {q:'What is a budget?', opts:['Plan for income and expenses','A bank account','Stock market strategy'], a:0},
+      {q:'Which is safest for emergency savings?', opts:['High-yield savings','P2P lending','Long-term stocks'], a:0},
+      {q:'Diversification means?', opts:['Putting money in different assets','Keeping all money in cash','Spending more'], a:0}
+    ]
+    let quizIndex = 0
+    function renderQuiz(){ const area = document.getElementById('quizArea'); area.innerHTML='';
+      const item = quizData[quizIndex];
+      const qdiv = document.createElement('div');
+      qdiv.innerHTML = `<div style="font-weight:700">${item.q}</div>`
+      item.opts.forEach((o,idx)=>{
+        const btn = document.createElement('button'); btn.className='btn secondary'; btn.style.display='block'; btn.style.marginTop='8px'; btn.textContent = o;
+        btn.addEventListener('click', ()=>{ handleQuizAnswer(idx) })
+        qdiv.appendChild(btn)
+      })
+      area.appendChild(qdiv)
+    }
+    function handleQuizAnswer(choice){ const correct = quizData[quizIndex].a === choice; if(correct){ addPoints(8); showToast('Correct! +8 pts') } else { addPoints(1); showToast('Not quite — read the lesson. +1 pt') }
+      quizIndex = (quizIndex+1) % quizData.length; renderQuiz()
+    }
+    renderQuiz()
+
+    document.getElementById('openLessons').addEventListener('click', ()=>{ alert('Lessons preview:\n1) Budgeting basics\n2) Saving habits\n3) Introduction to investing') })
+
+    // ---------- Reset / misc ----------
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      if(confirm('Reset all progress?')){ localStorage.removeItem(STORAGE_KEY); state = JSON.parse(JSON.stringify(defaultState)); saveState(); location.reload() }
+    })
+
+    // init computed values on load
+    computeRemaining(); updateUI();
+
+  </script>
+</body>
+</html>
